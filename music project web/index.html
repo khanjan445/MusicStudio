@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jaiak Domain</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+    <div class="page-bg" aria-hidden="true"></div>
+
+    <div class="auth-shell" id="authShell">
+      <div class="auth-card">
+        <div class="auth-header">
+          <p class="badge">Secure Studio Access</p>
+          <h1>Welcome to Jaiak Studio</h1>
+          <p>Create an account or log in to enter the production workspace.</p>
+        </div>
+
+        <div class="auth-toggle" role="tablist" aria-label="Authentication mode">
+          <button type="button" class="auth-toggle-btn active" id="showLoginBtn" data-mode="login">Login</button>
+          <button type="button" class="auth-toggle-btn" id="showSignupBtn" data-mode="signup">Register</button>
+        </div>
+
+        <form id="loginForm" class="auth-form active">
+          <input type="email" id="loginEmail" placeholder="Email address" required />
+          <input type="password" id="loginPassword" placeholder="Password" required />
+          <button type="submit" class="btn btn-primary">Continue to Studio</button>
+          <button type="button" class="btn btn-outline" id="forgotPasswordBtn">Forgot password?</button>
+        </form>
+
+        <form id="resetForm" class="auth-form">
+          <input type="email" id="resetEmail" placeholder="Registered email address" required />
+          <button type="button" class="btn btn-secondary" id="sendOtpBtn">Send OTP</button>
+          <input type="text" id="resetOtp" placeholder="Enter OTP" hidden />
+          <input type="password" id="resetNewPassword" placeholder="New password" hidden />
+          <button type="button" class="btn btn-primary" id="resetPasswordBtn" hidden>Reset Password</button>
+          <button type="button" class="btn btn-outline" id="backToLoginBtn">Back to login</button>
+        </form>
+
+        <form id="signupForm" class="auth-form">
+          <input type="text" id="signupName" placeholder="Your name" required />
+          <input type="email" id="signupEmail" placeholder="Email address" required />
+          <input type="password" id="signupPassword" placeholder="Create password" required />
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+
+        <p class="auth-message" id="authMessage" aria-live="polite">Use the form above to sign in or register.</p>
+
+        <div class="auth-backend-card">
+          <h3>Starter backend</h3>
+          <p>Users are stored in your browser and can be exported as an Excel-friendly CSV file.</p>
+          <button type="button" class="btn btn-secondary" id="downloadCsvBtn">Export users.csv</button>
+        </div>
+      </div>
+    </div>
+
+    <header class="topbar" id="topbar" hidden>
+      <div class="brand-block">
+        <a href="#" class="brand" id="studioBrand">Jaiak studio</a>
+        <p class="brand-subtitle" id="brandSubtitle">Signed in as Guest</p>              <!-- main ta nickname change kora javascript ot change hoi -->
+      </div>
+      <nav class="nav-links">
+        <a href="#features" data-protected="true">Features</a>
+        <a href="#workflow" data-protected="true">Workflow</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <span class="user-chip" id="userBadge">Guest</span>
+        <button type="button" class="btn btn-outline" id="viewDemoBtn">View Demo</button>
+        <button type="button" class="btn btn-secondary" id="subscribeBtn">Subscribe</button>
+        <button type="button" class="btn btn-secondary" id="logoutBtn">Logout</button>
+      </div>
+    </header>
+
+    <div class="modal" id="purchaseModal" aria-hidden="true">
+      <div class="modal-card">
+        <button type="button" class="modal-close" id="purchaseCloseBtn" aria-label="Close">×</button>
+        <p class="badge">Pro Purchase</p>
+        <h2>Unlock full Pro studio</h2>
+        <p>Complete your purchase to unlock the Pro environment, remove demo mode, and redirect directly into the premium editor.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" id="confirmPurchaseBtn">Confirm Purchase</button>
+          <button type="button" class="btn btn-secondary" id="cancelPurchaseBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <main class="page" id="mainContent" hidden>
+      <div class="view-switcher" role="tablist" aria-label="Studio views">
+        <button type="button" class="view-switcher-btn active" id="studioTabBtn" data-view="studio">Studio</button>
+        <button type="button" class="view-switcher-btn" id="proTabBtn" data-view="pro">Pro</button>
+      </div>
+      <p class="access-message" id="accessMessage" aria-live="polite"></p>
+
+      <section class="pro-preview-section" id="proPreviewSection" hidden>
+        <div class="section-heading">
+          <p class="badge">Pro studio preview</p>
+          <h2>Premium sound and editing tools for serious creators.</h2>
+          <p>Enjoy AI-assisted mastering, priority collaboration, live track editing, and platform-independent studio controls.</p>
+        </div>
+
+        <div class="pro-editor-grid">
+          <div class="pro-editor-panel">
+            <div class="editor-header">
+              <p class="badge">Editing workspace</p>
+              <h3>Music & Video Editor</h3>
+              <p>Switch between music and video editing, collaborate in multi-edit mode, and export your final project.</p>
+            </div>
+
+            <div class="editor-tabs" role="tablist" aria-label="Editor modes">
+              <button type="button" class="editor-tab active" data-media="audio">Music mode</button>
+              <button type="button" class="editor-tab" data-media="video">Video mode</button>
+            </div>
+
+            <div class="editor-controls">
+              <button type="button" class="btn btn-outline" id="multiEditBtn">Switch to multi editing</button>
+              <button type="button" class="btn btn-secondary" id="aiSyncBtn">AI music-video sync</button>
+              <button type="button" class="btn btn-primary" id="proDownloadBtn">Download final file</button>
+            </div>
+
+            <div class="editor-status" id="editorStatus">Load a track or a video to begin editing.</div>
+
+            <div class="pro-file-box">
+              <div class="drop-zone pro-drop-zone" id="proDropZone">
+                <input type="file" id="proMediaFile" accept="audio/*,video/*" hidden />
+                <div class="drop-zone-content">
+                  <h3 id="proDropTitle">Drop audio or video here</h3>
+                  <p id="proDropText">or click to select a track or video file</p>
+                  <button type="button" class="btn btn-primary" id="proBrowseBtn">Choose file</button>
+                </div>
+              </div>
+
+              <div class="editor-preview" id="proPlayerContainer">
+                <audio id="proAudioPlayer" controls hidden></audio>
+                <video id="proVideoPlayer" controls hidden></video>
+              </div>
+            </div>
+          </div>
+
+          <div class="pro-feature-cards">
+            <article class="pro-card">
+              <h3>AI Mastering</h3>
+              <p>Shape your sound with smart mastering presets and instant clarity boosts.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Priority Sessions</h3>
+              <p>Join faster collaboration queues and keep every mix in sync in real time.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Advanced Effects</h3>
+              <p>Use cinematic layers, adaptive EQ, and expanded vocal processing tools.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Music Editing</h3>
+              <p>Edit tracks directly with waveform trimming, automation, and multi-track mix control on every device.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="hero" id="launch">
+        <div class="hero-copy">
+          <div class="studio-welcome" id="studioWelcome" hidden>
+            <p class="badge">Studio access ready</p>
+            <h2 id="welcomeTitle">Welcome to your studio</h2>
+            <p id="welcomeSubtitle">Signed in as <span id="welcomeUserName">Guest</span></p>
+          </div>
+          <p class="badge">Co-create tracks in real time</p>
+          <h1>Collaborative music production, built for artists.</h1>
+          <p>
+            Upload stems, mix live, track every change, and connect with your team in a
+            polished studio workspace built for music creators.
+          </p>
+
+          <div class="hero-actions">
+            <button type="button" class="btn btn-primary" id="launchDemo">Launch Studio</button>
+            <a href="#workflow" class="btn btn-secondary" data-protected="true">Explore Workflow</a>
+          </div>
+
+          <div class="control-bar" aria-label="Studio actions">
+            <button type="button" class="control-btn active" data-action="play">▶ Start preview</button>
+            <button type="button" class="control-btn" data-action="pause">⏸ Pause</button>
+            <button type="button" class="control-btn" data-action="boost">⚡ Boost energy</button>
+          </div>
+
+          <div class="mood-pills" aria-label="Studio moods">
+            <button type="button" class="mood-pill active" data-mood="ambient">Ambient</button>
+            <button type="button" class="mood-pill" data-mood="upbeat">Upbeat</button>
+            <button type="button" class="mood-pill" data-mood="cinematic">Cinematic</button>
+          </div>
+
+          <ul class="hero-points">
+            <li>Live multi-user editing</li>
+            <li>Connection Builder</li>
+            <li>Easy collaboration</li>
+          </ul>
+        </div>
+
+        <div class="hero-panel">
+          <div class="panel-card">
+            <div class="panel-header">
+              <span>Live session</span>
+              <span class="status-pill">● Synced</span>
+            </div>
+
+            <div class="waveform" aria-label="waveform preview">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="session-meta">
+              <div>
+                <p>Active collaborators</p>
+                <h3 id="collaboratorCount">4</h3>
+              </div>
+              <div>
+                <p>Snapshots</p>
+                <h3>24</h3>
+              </div>
+            </div>
+
+            <div class="progress-track" aria-hidden="true">
+              <span id="progressFill"></span>
+            </div>
+
+            <p class="status-text" id="statusText">
+              Playback and edits are syncing across the room.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="upload-section" id="upload">
+        <div class="upload-card">
+          <div class="section-heading">
+            <p class="badge">Audio preview</p>
+            <h2>Drop a track here and play it instantly.</h2>
+            <p>Drop whatever downloaded track you want .</p>
+          </div>
+
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="audioFile" accept="audio/*" hidden />
+            <div class="drop-zone-content">
+              <h3 id="dropTitle">Drop your music here</h3>
+              <p id="dropText">or click to browse for a local audio file</p>
+              <button type="button" class="btn btn-primary" id="browseBtn">Choose Audio</button>
+            </div>
+          </div>
+
+          <div class="player-panel">
+            <audio id="audioPlayer" controls></audio>
+            <div class="player-actions">
+              <button type="button" class="btn btn-secondary" id="discardBtn">Discard Song</button>
+            </div>
+            <p id="audioStatus">No audio loaded yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <h3>No. of stem uploaded</h3>
+          <p>Stems uploaded weekly</p>
+        </article>
+        <article class="stat-card">
+          <h3>99.8%</h3>
+          <p>Project sync reliability</p>
+        </article>
+        <article class="stat-card">
+          <h3>3x faster</h3>
+          <p>Review cycles with snapshots</p>
+        </article>
+      </section>
+
+      <section class="features-grid" id="features">
+        <article class="feature-card">
+          <h3>Stem Upload Manager</h3>
+          <p>Support for WAV, MP3, and AIFF files with waveform previews and instant validation.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Real-Time Editor</h3>
+          <p>See every collaborator’s cursor and edit live, with conflict resolution built in.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Version History</h3>
+          <p>Roll back to named snapshots anytime with a Git-inspired timeline of project states.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Studio Contact</h3>
+          <p>Reach out for bookings, collaborations, and fast support with a direct contact flow.</p>
+        </article>
+      </section>
+
+      <section class="workflow" id="workflow">
+        <div class="section-heading">
+          <p class="badge">How it flows</p>
+          <h2>From upload to payout in four smooth steps.</h2>
+        </div>
+
+        <div class="timeline-grid">
+          <article class="timeline-card active">
+            <h3>01. Upload stems</h3>
+            <p>Drop in your tracks and let the workspace build waveform previews instantly.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>02. Edit together</h3>
+            <p>Collaborators shape the mix in real time with synced cursors and updates.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>03. Save snapshots</h3>
+            <p>Capture named versions and roll back without losing creative momentum.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>04. Connect with us</h3>
+            <p>Share your idea, book a session, and keep the collaboration moving with direct contact.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contact">
+        <div class="contact-card">
+          <div class="contact-copy">
+            <p class="badge">Contact</p>
+            <h2>Let’s build your next beat together.</h2>
+            <p>
+              Reach out for studio sessions, live events, or collaboration bookings.
+            </p>
+            <ul class="contact-list">
+              <li>📧 khanjansarma67@gmail.com.com</li>
+              <li>📞 +91 6003113393</li>
+              <li>📍 Assam, India</li>
+            </ul>
+          </div>
+
+          <form class="contact-form" id="contactForm">
+            <input type="text" name="name" placeholder="Your name" required />
+            <input type="email" name="email" placeholder="Your email" required />
+            <textarea rows="4" name="message" placeholder="Tell us about your project" required></textarea>
+            <button type="submit" class="btn btn-primary">Send Message</button>
+            <p class="form-status" id="formMessage" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="script.js"></script>
+  </body>
+</html>
