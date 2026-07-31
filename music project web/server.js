@@ -135,6 +135,46 @@ app.post('/register', async (req, res) => {
   }
 });
 
+// Login existing user
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
+
+    if (dbConnected) {
+      const user = await User.findOne({ email }).select('+password');
+      if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+
+      const validPassword = await user.comparePassword(password);
+      if (!validPassword) return res.status(401).json({ error: 'Invalid email or password' });
+
+      const userSafe = {
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt,
+      };
+      return res.json({ message: 'Login successful', user: userSafe });
+    }
+
+    const users = readUsersFromCsv();
+    const user = users.find((item) => item.email === email);
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const userSafe = {
+      username: user.username,
+      email: user.email,
+      createdAt: user.createdAt,
+    };
+    return res.json({ message: 'Login successful', user: userSafe });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Failed to authenticate user' });
+  }
+});
+
 // Serve index.html for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(rootDir, 'index.html'));

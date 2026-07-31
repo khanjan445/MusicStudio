@@ -1,10 +1,10 @@
 const launchBtn = document.getElementById('launchDemo');
 const statusText = document.getElementById('statusText');
-const viewDemoBtn = document.getElementById('viewDemoBtn');
 const subscribeBtn = document.getElementById('subscribeBtn');
 const studioTabBtn = document.getElementById('studioTabBtn');
 const proTabBtn = document.getElementById('proTabBtn');
 const proPreviewSection = document.getElementById('proPreviewSection');
+const demoStatusLabel = document.getElementById('demoStatusLabel');
 const accessMessage = document.getElementById('accessMessage');
 const collaboratorCountEl = document.getElementById('collaboratorCount');
 const progressFill = document.getElementById('progressFill');
@@ -16,9 +16,12 @@ const audioPlayer = document.getElementById('audioPlayer');
 const audioStatus = document.getElementById('audioStatus');
 const dropTitle = document.getElementById('dropTitle');
 const dropText = document.getElementById('dropText');
-const proMediaInput = document.getElementById('proMediaFile');
-const proDropZone = document.getElementById('proDropZone');
-const proBrowseBtn = document.getElementById('proBrowseBtn');
+const proAudioFileInput = document.getElementById('proAudioFile');
+const proVideoFileInput = document.getElementById('proVideoFile');
+const proAudioDropZone = document.getElementById('proAudioDropZone');
+const proVideoDropZone = document.getElementById('proVideoDropZone');
+const proAudioBrowseBtn = document.getElementById('proAudioBrowseBtn');
+const proVideoBrowseBtn = document.getElementById('proVideoBrowseBtn');
 const proDownloadBtn = document.getElementById('proDownloadBtn');
 const aiSyncBtn = document.getElementById('aiSyncBtn');
 const multiEditBtn = document.getElementById('multiEditBtn');
@@ -26,6 +29,24 @@ const editorStatus = document.getElementById('editorStatus');
 const editorTabs = document.querySelectorAll('.editor-tab');
 const proAudioPlayer = document.getElementById('proAudioPlayer');
 const proVideoPlayer = document.getElementById('proVideoPlayer');
+const proSyncSection = document.getElementById('proSyncSection');
+const proChillSection = document.getElementById('proChillSection');
+const partnerEmailInput = document.getElementById('partnerEmailInput');
+const connectPartnerBtn = document.getElementById('connectPartnerBtn');
+const syncConnectionStatus = document.getElementById('syncConnectionStatus');
+const collabAudioFileInput = document.getElementById('collabAudioFile');
+const collabAudioDropZone = document.getElementById('collabAudioDropZone');
+const collabAudioBrowseBtn = document.getElementById('collabAudioBrowseBtn');
+const collabUserAudioPlayer = document.getElementById('collabUserAudioPlayer');
+const partnerAudioFileInput = document.getElementById('partnerAudioFile');
+const partnerAudioDropZone = document.getElementById('partnerAudioDropZone');
+const partnerAudioBrowseBtn = document.getElementById('partnerAudioBrowseBtn');
+const partnerAudioPlayer = document.getElementById('partnerAudioPlayer');
+const startSyncSessionBtn = document.getElementById('startSyncSessionBtn');
+const syncRoomTitle = document.getElementById('syncRoomTitle');
+const syncRoomText = document.getElementById('syncRoomText');
+const syncRoomList = document.getElementById('syncRoomList');
+const payList = document.getElementById('payList');
 const contactForm = document.getElementById('contactForm');
 const formMessage = document.getElementById('formMessage');
 const moodButtons = document.querySelectorAll('.mood-pill');
@@ -167,16 +188,6 @@ function setAccessMessage(message, isError = false) {
 }
 
 function updateProHeaderState() {
-  if (viewDemoBtn) {
-    viewDemoBtn.hidden = isProAccess;
-    if (isProAccess) {
-      viewDemoBtn.style.display = 'none';
-      viewDemoBtn.setAttribute('aria-hidden', 'true');
-    } else {
-      viewDemoBtn.style.display = '';
-      viewDemoBtn.removeAttribute('aria-hidden');
-    }
-  }
   if (studioTabBtn) studioTabBtn.hidden = isProAccess;
 
   if (subscribeBtn) {
@@ -215,9 +226,16 @@ function closePurchaseModal() {
   }
 }
 
+function setDemoLabelVisible(visible) {
+  if (demoStatusLabel) {
+    demoStatusLabel.hidden = !visible;
+  }
+}
+
 function completePurchase() {
   isProAccess = true;
   isDemoAccess = false;
+  setDemoLabelVisible(false);
   setAccessMessage('Purchase complete. Redirecting to Pro studio.', false);
   updateProHeaderState();
   setActiveView('pro');
@@ -312,6 +330,7 @@ function setActiveView(view) {
 
 function enableDemoAccess() {
   isDemoAccess = true;
+  setDemoLabelVisible(true);
   setAccessMessage('Demo preview unlocked. Subscribe for full Pro access.', false);
   setActiveView('pro');
 }
@@ -484,33 +503,153 @@ async function exportUsersCsv() {
   }
 }
 
-function loadProMediaFile(file) {
-  if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
-    setEditorStatus('Please choose a valid audio or video file.');
+let proAudioUrl = '';
+let proVideoUrl = '';
+let proAudioName = '';
+let proVideoName = '';
+
+function loadProAudioFile(file) {
+  if (!file.type.startsWith('audio/')) {
+    setEditorStatus('Please choose a valid audio file.');
     return;
   }
 
-  if (proMediaUrl) {
-    URL.revokeObjectURL(proMediaUrl);
+  if (proAudioUrl) {
+    URL.revokeObjectURL(proAudioUrl);
   }
 
-  proMediaUrl = URL.createObjectURL(file);
-  proMediaName = file.name;
-  proMode = file.type.startsWith('video/') ? 'video' : 'audio';
-  setEditorMode(proMode);
+  proAudioUrl = URL.createObjectURL(file);
+  proAudioName = file.name;
 
-  if (proMode === 'audio' && proAudioPlayer) {
-    proAudioPlayer.src = proMediaUrl;
+  if (proAudioPlayer) {
+    proAudioPlayer.hidden = false;
+    proAudioPlayer.src = proAudioUrl;
     proAudioPlayer.load();
-    proAudioPlayer.play().catch(() => {});
   }
 
-  if (proMode === 'video' && proVideoPlayer) {
-    proVideoPlayer.src = proMediaUrl;
+  setEditorStatus(`Audio loaded: ${file.name}. Add a video to sync or use AI for audio-only mastering.`);
+}
+
+function loadProVideoFile(file) {
+  if (!file.type.startsWith('video/')) {
+    setEditorStatus('Please choose a valid video file.');
+    return;
+  }
+
+  if (proVideoUrl) {
+    URL.revokeObjectURL(proVideoUrl);
+  }
+
+  proVideoUrl = URL.createObjectURL(file);
+  proVideoName = file.name;
+
+  if (proVideoPlayer) {
+    proVideoPlayer.hidden = false;
+    proVideoPlayer.src = proVideoUrl;
     proVideoPlayer.load();
   }
 
-  setEditorStatus(`Loaded ${file.name}. ${proMode === 'video' ? 'Use AI sync to align music with video.' : 'Use AI sync for a smart music edit.'}`);
+  setEditorStatus(`Video loaded: ${file.name}. Add audio to sync with your visuals.`);
+}
+
+let isPartnerConnected = false;
+let connectedPartnerEmail = '';
+let collabAudioUrl = '';
+let partnerAudioUrl = '';
+
+function updateSyncRoom() {
+  if (syncConnectionStatus) {
+    syncConnectionStatus.textContent = isPartnerConnected ? 'Connected' : 'Not connected';
+  }
+
+  if (syncRoomTitle) {
+    syncRoomTitle.textContent = isPartnerConnected ? `Synced with ${connectedPartnerEmail}` : 'No partner connected';
+  }
+
+  if (syncRoomText) {
+    syncRoomText.textContent = isPartnerConnected
+      ? 'Both users can now drop audio tracks and listen in sync.'
+      : 'Connect a user and drop both tracks to start a shared listening session.';
+  }
+
+  if (syncRoomList) {
+    syncRoomList.innerHTML = isPartnerConnected
+      ? `<p>Connected users:</p><ul><li>You</li><li>${connectedPartnerEmail}</li></ul>`
+      : '<p>No synced users yet.</p>';
+  }
+}
+
+function connectPartner() {
+  const email = partnerEmailInput?.value.trim().toLowerCase();
+  if (!email) {
+    setEditorStatus('Enter a registered partner email to connect.');
+    return;
+  }
+
+  isPartnerConnected = true;
+  connectedPartnerEmail = email;
+  updateSyncRoom();
+  setEditorStatus(`Partner connected: ${email}. Drop both tracks to sync them.`);
+}
+
+function loadCollabAudioFile(file) {
+  if (!file.type.startsWith('audio/')) {
+    setEditorStatus('Please choose a valid audio file.');
+    return;
+  }
+
+  if (collabAudioUrl) {
+    URL.revokeObjectURL(collabAudioUrl);
+  }
+
+  collabAudioUrl = URL.createObjectURL(file);
+
+  if (collabUserAudioPlayer) {
+    collabUserAudioPlayer.hidden = false;
+    collabUserAudioPlayer.src = collabAudioUrl;
+    collabUserAudioPlayer.load();
+  }
+
+  setEditorStatus(`Your audio loaded: ${file.name}.`);
+  updateSyncRoom();
+}
+
+function loadPartnerAudioFile(file) {
+  if (!file.type.startsWith('audio/')) {
+    setEditorStatus('Please choose a valid audio file.');
+    return;
+  }
+
+  if (partnerAudioUrl) {
+    URL.revokeObjectURL(partnerAudioUrl);
+  }
+
+  partnerAudioUrl = URL.createObjectURL(file);
+
+  if (partnerAudioPlayer) {
+    partnerAudioPlayer.hidden = false;
+    partnerAudioPlayer.src = partnerAudioUrl;
+    partnerAudioPlayer.load();
+  }
+
+  setEditorStatus(`Partner audio loaded: ${file.name}.`);
+  updateSyncRoom();
+}
+
+function playSyncSession() {
+  if (!isPartnerConnected) {
+    setEditorStatus('Connect a partner before syncing the session.');
+    return;
+  }
+
+  if (!collabAudioUrl || !partnerAudioUrl) {
+    setEditorStatus('Both users must drop a track before the sync session starts.');
+    return;
+  }
+
+  collabUserAudioPlayer?.play().catch(() => {});
+  partnerAudioPlayer?.play().catch(() => {});
+  setEditorStatus('Sync session started — both tracks are playing together.');
 }
 
 function createProDownload() {
@@ -537,7 +676,16 @@ function toggleMultiEdit() {
 }
 
 function simulateAiSync() {
-  if (!proMediaUrl) {
+  if (isPartnerConnected && collabAudioUrl && partnerAudioUrl) {
+    setEditorStatus('AI is syncing both user tracks into a shared session...');
+    playSyncSession();
+    setTimeout(() => {
+      setEditorStatus('AI sync complete: both partner tracks are now aligned and ready for playback.');
+    }, 1400);
+    return;
+  }
+
+  if (!proAudioUrl && !proVideoUrl) {
     setEditorStatus('Load an audio or video file before using AI sync.');
     return;
   }
@@ -573,15 +721,35 @@ async function initializeAuth() {
     const email = document.getElementById('loginEmail')?.value.trim().toLowerCase();
     const password = document.getElementById('loginPassword')?.value;
 
-    const matchedUser = users.find((user) => user.email === email && user.password === password);
-    if (!matchedUser) {
-      setAuthMessage('No matching account found. Please register first.', true);
+    if (!email || !password) {
+      setAuthMessage('Enter both email and password to login.', true);
       return;
     }
 
-    await saveUsers();
-    showMainApp(matchedUser);
-    loginForm.reset();
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAuthMessage(data.error || 'Login failed. Check your credentials.', true);
+        return;
+      }
+
+      const loggedUser = {
+        ...data.user,
+        name: data.user.username || data.user.name || '',
+      };
+
+      showMainApp(loggedUser);
+      loginForm.reset();
+    } catch (error) {
+      console.error('Login request failed:', error);
+      setAuthMessage('Unable to reach the server. Try again later.', true);
+    }
   });
 
   signupForm?.addEventListener('submit', async (event) => {
@@ -601,31 +769,46 @@ async function initializeAuth() {
       return;
     }
 
-    const response = await fetch('/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: name,
-        email,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      setAuthMessage(data.error || 'Registration failed', true);
-      return;
-    }
-
-    const newUser = {
+    let newUser = {
       username: name,
       name,
       email,
       password,
       createdAt: new Date().toISOString(),
     };
+
+    try {
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setAuthMessage(data.error || 'Registration failed', true);
+        return;
+      }
+
+      if (data.user) {
+        newUser = {
+          ...newUser,
+          username: data.user.username || newUser.username,
+          name: data.user.username || data.user.name || newUser.name,
+          email: data.user.email || newUser.email,
+          createdAt: data.user.createdAt || newUser.createdAt,
+        };
+      }
+    } catch (error) {
+      console.error('Registration request failed:', error);
+      setAuthMessage('Server not reachable. Saving registration locally.', false);
+    }
 
     users.push(newUser);
     await saveUsers();
@@ -653,7 +836,6 @@ async function initializeAuth() {
     setAuthMessage('Back to login. Enter your credentials to continue.');
   });
 
-  viewDemoBtn?.addEventListener('click', enableDemoAccess);
   subscribeBtn?.addEventListener('click', showPurchaseModal);
   confirmPurchaseBtn?.addEventListener('click', completePurchase);
   cancelPurchaseBtn?.addEventListener('click', closePurchaseModal);
@@ -851,30 +1033,56 @@ contactForm?.addEventListener('submit', (event) => {
   contactForm.reset();
 });
 
-proBrowseBtn?.addEventListener('click', () => proMediaInput?.click());
+proAudioBrowseBtn?.addEventListener('click', () => collabAudioFileInput?.click());
+proVideoBrowseBtn?.addEventListener('click', () => partnerAudioFileInput?.click());
 
-proMediaInput?.addEventListener('change', (event) => {
+proAudioFileInput?.addEventListener('change', (event) => {
   const file = event.target.files?.[0];
   if (file) {
-    loadProMediaFile(file);
+    loadProAudioFile(file);
   }
 });
 
-proDropZone?.addEventListener('dragover', (event) => {
-  event.preventDefault();
-  proDropZone.classList.add('dragover');
+proVideoFileInput?.addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  if (file) {
+    loadProVideoFile(file);
+  }
 });
 
-proDropZone?.addEventListener('dragleave', () => {
-  proDropZone.classList.remove('dragover');
+proAudioDropZone?.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  proAudioDropZone.classList.add('dragover');
 });
 
-proDropZone?.addEventListener('drop', (event) => {
+proAudioDropZone?.addEventListener('dragleave', () => {
+  proAudioDropZone.classList.remove('dragover');
+});
+
+proAudioDropZone?.addEventListener('drop', (event) => {
   event.preventDefault();
-  proDropZone.classList.remove('dragover');
+  proAudioDropZone.classList.remove('dragover');
   const file = event.dataTransfer.files?.[0];
   if (file) {
-    loadProMediaFile(file);
+    loadProAudioFile(file);
+  }
+});
+
+proVideoDropZone?.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  proVideoDropZone.classList.add('dragover');
+});
+
+proVideoDropZone?.addEventListener('dragleave', () => {
+  proVideoDropZone.classList.remove('dragover');
+});
+
+proVideoDropZone?.addEventListener('drop', (event) => {
+  event.preventDefault();
+  proVideoDropZone.classList.remove('dragover');
+  const file = event.dataTransfer.files?.[0];
+  if (file) {
+    loadProVideoFile(file);
   }
 });
 

@@ -68,7 +68,6 @@
       </nav>
       <div class="header-actions">
         <span class="user-chip" id="userBadge">Guest</span>
-        <button type="button" class="btn btn-outline" id="viewDemoBtn">View Demo</button>
         <button type="button" class="btn btn-secondary" id="subscribeBtn">Subscribe</button>
         <button type="button" class="btn btn-secondary" id="logoutBtn">Logout</button>
       </div>
@@ -106,37 +105,67 @@
             <div class="editor-header">
               <p class="badge">Editing workspace</p>
               <h3>Music & Video Editor</h3>
-              <p>Switch between music and video editing, collaborate in multi-edit mode, and export your final project.</p>
-            </div>
-
-            <div class="editor-tabs" role="tablist" aria-label="Editor modes">
-              <button type="button" class="editor-tab active" data-media="audio">Music mode</button>
-              <button type="button" class="editor-tab" data-media="video">Video mode</button>
+              <p>Load audio and video sources, then synchronize them with AI-powered tools.</p>
             </div>
 
             <div class="editor-controls">
-              <button type="button" class="btn btn-outline" id="multiEditBtn">Switch to multi editing</button>
+              <button type="button" class="btn btn-outline" id="multiEditBtn">Enable multi editing</button>
               <button type="button" class="btn btn-secondary" id="aiSyncBtn">AI music-video sync</button>
               <button type="button" class="btn btn-primary" id="proDownloadBtn">Download final file</button>
             </div>
 
-            <div class="editor-status" id="editorStatus">Load a track or a video to begin editing.</div>
-
-            <div class="pro-file-box">
-              <div class="drop-zone pro-drop-zone" id="proDropZone">
-                <input type="file" id="proMediaFile" accept="audio/*,video/*" hidden />
-                <div class="drop-zone-content">
-                  <h3 id="proDropTitle">Drop audio or video here</h3>
-                  <p id="proDropText">or click to select a track or video file</p>
-                  <button type="button" class="btn btn-primary" id="proBrowseBtn">Choose file</button>
+            <div class="pro-file-grid">
+              <div class="drop-card">
+                <p class="badge">Audio source</p>
+                <div class="drop-zone pro-drop-zone" id="proAudioDropZone">
+                  <input type="file" id="proAudioFile" accept="audio/*" hidden />
+                  <div class="drop-zone-content">
+                    <h3>Drop audio here</h3>
+                    <p>Select a track for sync and editing.</p>
+                    <button type="button" class="btn btn-primary" id="proAudioBrowseBtn">Choose audio</button>
+                  </div>
                 </div>
               </div>
 
-              <div class="editor-preview" id="proPlayerContainer">
-                <audio id="proAudioPlayer" controls hidden></audio>
-                <video id="proVideoPlayer" controls hidden></video>
+              <div class="drop-card">
+                <p class="badge">Video source</p>
+                <div class="drop-zone pro-drop-zone" id="proVideoDropZone">
+                  <input type="file" id="proVideoFile" accept="video/*" hidden />
+                  <div class="drop-zone-content">
+                    <h3>Drop video here</h3>
+                    <p>Select a video to align with your track.</p>
+                    <button type="button" class="btn btn-primary" id="proVideoBrowseBtn">Choose video</button>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div class="pro-preview-panels">
+              <div class="preview-card">
+                <p class="badge">Audio preview</p>
+                <audio id="proAudioPlayer" controls></audio>
+              </div>
+              <div class="preview-card">
+                <p class="badge">Video preview</p>
+                <video id="proVideoPlayer" controls></video>
+              </div>
+            </div>
+
+            <div class="editor-mode-panel">
+              <h3>Editing modes</h3>
+              <div class="mode-grid">
+                <div class="mode-card">
+                  <h4>Multi-edit mode</h4>
+                  <p>Bring together collaborators and edit many tracks in sync.</p>
+                </div>
+                <div class="mode-card">
+                  <h4>Clip edit mode</h4>
+                  <p>Trim, arrange, and tune your audio across devices with precision.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-status" id="editorStatus">Load both audio and video to begin full AI sync.</div>
           </div>
 
           <div class="pro-feature-cards">
@@ -155,6 +184,98 @@
             <article class="pro-card">
               <h3>Music Editing</h3>
               <p>Edit tracks directly with waveform trimming, automation, and multi-track mix control on every device.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="pro-collab-section">
+          <div class="section-heading">
+            <p class="badge">Sync collaboration</p>
+            <h2>Connect with another registered Pro user.</h2>
+            <p>Each user drops audio individually, then the room listens together in sync.</p>
+          </div>
+
+          <div class="sync-top-row">
+            <div class="sync-panel">
+              <div class="sync-panel-header">
+                <p class="badge">Connect partner</p>
+                <span class="sync-status-badge" id="syncConnectionStatus">Not connected</span>
+              </div>
+              <div class="sync-connect-grid">
+                <input type="text" id="partnerEmailInput" placeholder="Partner email" />
+                <button type="button" class="btn btn-secondary" id="connectPartnerBtn">Connect user</button>
+              </div>
+              <p class="sync-note">Use any registered Pro email to simulate a synced partner session.</p>
+            </div>
+            <div class="sync-panel">
+              <div class="sync-panel-header">
+                <p class="badge">Pay list</p>
+              </div>
+              <ul class="pay-list" id="payList">
+                <li>Track royalty share · 50/50</li>
+                <li>Session fee · $20</li>
+                <li>Sync bonus · $8</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sync-user-grid">
+            <div class="sync-card">
+              <p class="badge">Your track</p>
+              <div class="drop-zone pro-drop-zone" id="collabAudioDropZone">
+                <input type="file" id="collabAudioFile" accept="audio/*" hidden />
+                <div class="drop-zone-content">
+                  <h3>Drop your audio</h3>
+                  <p>Drop a track for your synced session.</p>
+                  <button type="button" class="btn btn-primary" id="collabAudioBrowseBtn">Choose audio</button>
+                </div>
+              </div>
+              <audio id="collabUserAudioPlayer" controls hidden></audio>
+            </div>
+
+            <div class="sync-card">
+              <p class="badge">Partner track</p>
+              <div class="drop-zone pro-drop-zone" id="partnerAudioDropZone">
+                <input type="file" id="partnerAudioFile" accept="audio/*" hidden />
+                <div class="drop-zone-content">
+                  <h3>Drop partner audio</h3>
+                  <p>Partner uploads their track and it syncs to the room.</p>
+                  <button type="button" class="btn btn-primary" id="partnerAudioBrowseBtn">Choose audio</button>
+                </div>
+              </div>
+              <audio id="partnerAudioPlayer" controls hidden></audio>
+            </div>
+          </div>
+
+          <div class="sync-room-status">
+            <p class="badge">Live sync room</p>
+            <h3 id="syncRoomTitle">No partner connected</h3>
+            <p id="syncRoomText">Connect a user and drop both tracks to start a shared listening session.</p>
+            <div class="sync-room-list" id="syncRoomList"></div>
+          </div>
+        </div>
+
+        <div class="chill-section">
+          <div class="section-heading">
+            <p class="badge">Chill out lounge</p>
+            <h2>Friends listen together in sync.</h2>
+            <p>Share a relaxed listening space where music stays aligned across mobile, tablet, and desktop.</p>
+          </div>
+
+          <div class="chill-grid">
+            <article class="chill-card">
+              <h3>Shared lounge</h3>
+              <p>Invite friends to join the room and enjoy synced playback with live presence updates.</p>
+              <div class="friends-list">
+                <span>🎧 Alex</span>
+                <span>🎹 Maya</span>
+                <span>🎤 Sam</span>
+              </div>
+            </article>
+            <article class="chill-card">
+              <h3>Session sync</h3>
+              <p>Music playback and cue markers remain in sync no matter what device each friend uses.</p>
+              <div class="sync-status">SYNCED · 3 listeners</div>
             </article>
           </div>
         </div>
@@ -241,7 +362,11 @@
           <div class="section-heading">
             <p class="badge">Audio preview</p>
             <h2>Drop a track here and play it instantly.</h2>
-            <p>Drop whatever downloaded track you want .</p>
+            <p>Drop whatever downloaded track you want.</p>
+          </div>
+
+          <div class="upload-meta">
+            <span class="badge demo-pill" id="demoStatusLabel">Demo mode</span>
           </div>
 
           <div class="drop-zone" id="dropZone">
