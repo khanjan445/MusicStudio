@@ -12,7 +12,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(rootDir));
 
 let dbConnected = false;
-let User = require('../models/User');
+const userModelPath = path.join(__dirname, '..', 'models', 'User');
+const User = require(userModelPath);
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/musicProject';
 mongoose.connect(mongoUri)
   .then(() => {

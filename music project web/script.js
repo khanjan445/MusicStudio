@@ -86,8 +86,13 @@ async function loadUsers() {
     }
 
     const serverUsers = await response.json();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serverUsers));
-    return serverUsers;
+    const normalizedUsers = serverUsers.map((user) => ({
+      ...user,
+      name: user.name || user.username || '',
+    }));
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedUsers));
+    return normalizedUsers;
   } catch (error) {
     console.error('Unable to load users', error);
     return [];
@@ -96,15 +101,6 @@ async function loadUsers() {
 
 async function saveUsers() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-  try {
-    await fetch(API_USERS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ users }),
-    });
-  } catch (error) {
-    console.error('Unable to sync users to CSV', error);
-  }
 }
 
 function loadCurrentUser() {
@@ -605,7 +601,26 @@ async function initializeAuth() {
       return;
     }
 
+    const response = await fetch('/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: name,
+        email,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      setAuthMessage(data.error || 'Registration failed', true);
+      return;
+    }
+
     const newUser = {
+      username: name,
       name,
       email,
       password,
