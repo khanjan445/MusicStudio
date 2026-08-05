@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileModal = document.getElementById('profileModal');
   const profileCloseBtn = document.getElementById('profileCloseBtn');
   const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+  const discardProfileBtn = document.getElementById('discardProfileBtn');
   const profileForm = document.getElementById('profileForm');
   const profileNickname = document.getElementById('profileNickname');
   const profileEmail = document.getElementById('profileEmail');
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileAvatarImg = document.getElementById('profileAvatarImg');
   const avatarPresetBtns = document.querySelectorAll('.avatar-preset-btn');
   let currentSelectedAvatar = '👤';
+  let profileModalSnapshot = null;
 
   // Application State
   let collaboratorCount = 4;
@@ -285,6 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
     currentSelectedAvatar = currentUser.avatar || '👤';
     renderAvatarInModal(currentSelectedAvatar);
 
+    if (profileAvatarFile) profileAvatarFile.value = '';
+
     if (isProAccess) {
       if (profileSubStatusText) profileSubStatusText.textContent = 'Active ⭐ Pro Member';
       if (profileSubBadge) {
@@ -314,8 +318,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showProfileModal() {
     if (!requireAuth()) return;
+    if (currentUser) {
+      profileModalSnapshot = {
+        username: currentUser.username || currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || '',
+        avatar: currentUser.avatar || '👤',
+        isProSubscribed: !!currentUser.isProSubscribed,
+      };
+    }
     updateProfileModalUI();
     if (profileModal) profileModal.classList.add('active');
+  }
+
+  function resetProfileModalFields() {
+    if (profileModalSnapshot) {
+      if (profileNickname) profileNickname.value = profileModalSnapshot.username;
+      if (profileEmail) profileEmail.value = profileModalSnapshot.email;
+      if (profilePhone) profilePhone.value = profileModalSnapshot.phone;
+      currentSelectedAvatar = profileModalSnapshot.avatar || '👤';
+      renderAvatarInModal(currentSelectedAvatar);
+    } else {
+      updateProfileModalUI();
+    }
+    if (profileAvatarFile) profileAvatarFile.value = '';
+    showToast('Discarded profile edits.');
   }
 
   function closeProfileModal() {
@@ -599,6 +626,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // User Profile & Subscription Handlers
   userBadge?.addEventListener('click', () => showProfileModal());
   profileCloseBtn?.addEventListener('click', () => closeProfileModal());
+  discardProfileBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetProfileModalFields();
+  });
   cancelProfileBtn?.addEventListener('click', () => closeProfileModal());
 
   toggleSubscriptionBtn?.addEventListener('click', () => {
@@ -748,9 +779,17 @@ document.addEventListener('DOMContentLoaded', () => {
       audioPlayer.pause();
       audioPlayer.removeAttribute('src');
     }
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      audioUrl = '';
+    }
+    if (audioFileInput) {
+      audioFileInput.value = '';
+    }
     if (dropTitle) dropTitle.textContent = 'Drop your music here';
     if (dropText) dropText.textContent = 'or click to browse for a local audio file';
     if (audioStatus) audioStatus.textContent = 'No audio loaded yet.';
+    dropZone?.classList.remove('is-ready');
     showToast('Song discarded');
   });
 
