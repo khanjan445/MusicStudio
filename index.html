@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jaiak Studio | Collaborative Music Workspace</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Dynamic Ambient Glowing Backgrounds -->
+    <div class="background-glow"></div>
+    <div class="page-bg" aria-hidden="true"></div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Authentication Shell -->
+    <div class="auth-shell" id="authShell">
+      <div class="auth-card">
+        <div class="auth-header">
+          <p class="badge">Secure Studio Access</p>
+          <h1>Welcome to Jaiak Studio</h1>
+          <p>Create an account or log in to enter the production workspace.</p>
+        </div>
+
+        <div class="auth-toggle" role="tablist" aria-label="Authentication mode">
+          <button type="button" class="auth-toggle-btn active" id="showLoginBtn" data-mode="login">Login</button>
+          <button type="button" class="auth-toggle-btn" id="showSignupBtn" data-mode="signup">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active">
+          <input type="email" id="loginEmail" placeholder="Email address" required />
+          <input type="password" id="loginPassword" placeholder="Password" required />
+          <button type="submit" class="btn btn-primary">Continue to Studio</button>
+          <button type="button" class="btn btn-outline" id="forgotPasswordBtn">Forgot password?</button>
+        </form>
+
+        <!-- Password Reset OTP Form -->
+        <form id="resetForm" class="auth-form">
+          <input type="email" id="resetEmail" placeholder="Registered email address" required />
+          <button type="button" class="btn btn-secondary" id="sendOtpBtn">Send OTP</button>
+          <input type="text" id="resetOtp" placeholder="Enter OTP" hidden />
+          <input type="password" id="resetNewPassword" placeholder="New password" hidden />
+          <button type="button" class="btn btn-primary" id="resetPasswordBtn" hidden>Reset Password</button>
+          <button type="button" class="btn btn-outline" id="backToLoginBtn">Back to login</button>
+        </form>
+
+        <!-- Registration Form -->
+        <form id="signupForm" class="auth-form">
+          <input type="text" id="signupName" placeholder="Your name" required />
+          <input type="email" id="signupEmail" placeholder="Email address" required />
+          <input type="password" id="signupPassword" placeholder="Create password" required />
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+
+        <p class="auth-message" id="authMessage" aria-live="polite">Use the form above to sign in or register.</p>
+
+        <div class="auth-backend-card">
+          <h3>Starter Backend</h3>
+          <p>Users are synced with your API server or local Excel-friendly CSV file.</p>
+          <button type="button" class="btn btn-secondary" id="downloadCsvBtn">Export users.csv</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topbar Navigation -->
+    <header class="topbar" id="topbar" hidden>
+      <div class="brand-block">
+        <a href="#" class="brand" id="studioBrand">Jaiak studio</a>
+        <p class="brand-subtitle" id="brandSubtitle">Signed in as Guest</p>
+      </div>
+      <nav class="nav-links">
+        <a href="#proSection">Pro Workspace</a>
+        <a href="#features" data-protected="true">Features</a>
+        <a href="#workflow" data-protected="true">Workflow</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <button type="button" class="user-chip clickable-user-chip" id="userBadge" title="Click to view & edit profile">
+          <span class="user-avatar-icon">👤</span>
+          <span class="user-name-text">Guest</span>
+          <span class="user-online-dot" title="Online Presence"></span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="subscribeBtn">Subscribe</button>
+        <button type="button" class="btn btn-secondary" id="logoutBtn">Logout</button>
+      </div>
+    </header>
+
+    <!-- Modal Purchase Dialog -->
+    <div class="modal" id="purchaseModal" aria-hidden="true">
+      <div class="modal-card">
+        <button type="button" class="modal-close" id="purchaseCloseBtn" aria-label="Close">×</button>
+        <p class="badge">Pro Subscription Required</p>
+        <h2>Unlock Pro Studio Features</h2>
+        <p>Subscribe to Pro access to unlock Music & Video Editor, AI Sync, Multi-Editing, and Synced Pro Partner Room Playlists.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" id="confirmPurchaseBtn">Subscribe to Pro</button>
+          <button type="button" class="btn btn-secondary" id="cancelPurchaseBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Profile & Subscription Modal Dialog -->
+    <div class="modal" id="profileModal" aria-hidden="true">
+      <div class="modal-card" style="max-width: 520px;">
+        <button type="button" class="modal-close" id="profileCloseBtn" aria-label="Close">×</button>
+        <p class="badge">User Profile Settings</p>
+        <h2>My Account & Subscription</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage your nickname, email address, phone number, and Pro subscription.</p>
+
+        <form id="profileForm" style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+          <!-- Avatar Customization Card -->
+          <div class="avatar-picker-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); align-self: flex-start;">Profile Avatar Picture</label>
+            <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+              <div id="profileAvatarBox" style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan)); display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 2px solid var(--accent-cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); overflow: hidden; position: relative;">
+                <span id="profileAvatarEmoji">👤</span>
+                <img id="profileAvatarImg" src="" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                <input type="file" id="profileAvatarFile" accept="image/*" hidden />
+                <button type="button" class="btn btn-secondary" id="browseAvatarBtn" style="font-size: 0.8rem; padding: 6px 12px; min-height: 36px;">📷 Upload Custom Image</button>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Choose a local picture file or click a preset avatar below.</p>
+              </div>
+            </div>
+
+            <!-- Avatar Presets -->
+            <div style="width: 100%;">
+              <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Or Choose Preset Avatar:</label>
+              <div class="avatar-presets-grid" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="avatar-preset-btn active" data-avatar="👤">👤 Default</button>
+                <button type="button" class="avatar-preset-btn" data-avatar="🎧">🎧 Producer</button>
+                <button type="button" class="avatar-preset-btn" data-avatar="🎤">🎤 Vocalist</button>
+                <button type="button" class="avatar-preset-btn" data-avatar="🎹">🎹 DJ / Beats</button>
+                <button type="button" class="avatar-preset-btn" data-avatar="⚡">⚡ Cyberpunk</button>
+                <button type="button" class="avatar-preset-btn" data-avatar="🎸">🎸 Rocker</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Nickname / Display Name</label>
+            <input type="text" id="profileNickname" placeholder="Enter nickname" required style="width: 100%; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); color: var(--text-main); font-size: 16px;" />
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address</label>
+            <input type="email" id="profileEmail" placeholder="Enter email" required style="width: 100%; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); color: var(--text-main); font-size: 16px;" />
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone Number</label>
+            <input type="tel" id="profilePhone" placeholder="Enter phone number (e.g. +91 9876543210)" style="width: 100%; padding: 12px; border-radius: var(--radius-md); background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); color: var(--text-main); font-size: 16px;" />
+          </div>
+
+          <!-- Subscription Manager Card -->
+          <div class="sub-manager-card" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="font-size: 0.95rem;">Pro Membership Status</h4>
+                <p id="profileSubStatusText" style="font-size: 0.8rem; color: var(--text-muted);">Free Plan</p>
+              </div>
+              <span id="profileSubBadge" class="badge">Free</span>
+            </div>
+            <button type="button" class="btn btn-secondary" id="toggleSubscriptionBtn" style="font-size: 0.85rem; padding: 8px 14px;">Toggle Pro Subscription</button>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile Changes</button>
+            <button type="button" class="btn btn-secondary" id="discardProfileBtn">Discard Changes</button>
+            <button type="button" class="btn btn-secondary" id="cancelProfileBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Workspace Application -->
+    <main class="page" id="mainContent" hidden>
+
+      <!-- Welcome Banner & Main Studio Hero Section -->
+      <section class="hero" id="launch">
+        <div class="hero-copy">
+          <div class="studio-welcome" id="studioWelcome">
+            <p class="badge">Studio Access Ready</p>
+            <h2 id="welcomeTitle">Welcome to your studio</h2>
+            <p id="welcomeSubtitle">Signed in as <span id="welcomeUserName">Guest</span></p>
+          </div>
+          <p class="badge" style="margin-top: 10px;">Co-create tracks in real time</p>
+          <h1>Collaborative music production, built for artists.</h1>
+          <p>
+            Upload stems, mix live, track every change, and connect with your team in a
+            polished studio workspace built for music creators.
+          </p>
+
+          <div class="hero-actions">
+            <button type="button" class="btn btn-primary" id="launchDemo">Unlock Pro Studio ⭐</button>
+            <a href="#workflow" class="btn btn-secondary" data-protected="true">Explore Workflow</a>
+          </div>
+
+          <div class="control-bar" aria-label="Studio actions">
+            <button type="button" class="control-btn active" data-action="play">▶ Start preview</button>
+            <button type="button" class="control-btn" data-action="pause">⏸ Pause</button>
+            <button type="button" class="control-btn" data-action="boost">⚡ Boost energy</button>
+          </div>
+
+          <div class="mood-pills" aria-label="Studio moods">
+            <button type="button" class="mood-pill active" data-mood="ambient">Ambient</button>
+            <button type="button" class="mood-pill" data-mood="upbeat">Upbeat</button>
+            <button type="button" class="mood-pill" data-mood="cinematic">Cinematic</button>
+          </div>
+
+          <ul class="hero-points">
+            <li>Live multi-user editing</li>
+            <li>Connection Builder</li>
+            <li>Easy collaboration</li>
+          </ul>
+        </div>
+
+        <div class="hero-panel">
+          <div class="panel-card">
+            <div class="panel-header">
+              <span>Live session</span>
+              <span class="status-pill">● Synced</span>
+            </div>
+
+            <div class="waveform" aria-label="waveform preview">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="session-meta">
+              <div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Active collaborators</p>
+                <h3 id="collaboratorCount">4</h3>
+              </div>
+              <div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Active Users</p>
+                <h3>5</h3>
+              </div>
+            </div>
+
+            <div class="progress-track" aria-hidden="true">
+              <span id="progressFill"></span>
+            </div>
+
+            <p class="status-text" id="statusText">
+              Playback and edits are syncing across the room.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Audio Upload & Player Section -->
+      <section class="upload-section" id="upload">
+        <div class="upload-card">
+          <div class="section-heading">
+            <p class="badge">Audio preview</p>
+            <h2>Drop a track here and play it instantly.</h2>
+            <p>Drop whatever downloaded track you want.</p>
+          </div>
+
+          <div class="upload-meta" id="demoModeContainer">
+            <span class="badge demo-pill" id="demoStatusLabel">Demo mode</span>
+          </div>
+
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="audioFile" accept="audio/*" hidden />
+            <div class="drop-zone-content">
+              <h3 id="dropTitle">Drop your music here</h3>
+              <p id="dropText">or click to browse for a local audio file</p>
+              <button type="button" class="btn btn-primary" id="browseBtn">Choose Audio</button>
+            </div>
+          </div>
+
+          <div class="player-panel">
+            <audio id="audioPlayer" controls></audio>
+            <div class="player-actions">
+              <button type="button" class="btn btn-secondary" id="discardBtn">Discard Song</button>
+            </div>
+            <p id="audioStatus" style="font-size: 0.85rem; color: var(--text-muted);">No audio loaded yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ⭐ MAIN ATTRACTION: PRO STUDIO WORKSPACE (MOVED TO TOP OF WORKSPACE) -->
+      <section class="pro-preview-section" id="proSection" style="margin-top: 10px;">
+        <div class="section-heading" style="max-width: 900px;">
+          <p class="badge" style="background: rgba(0, 240, 255, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">🔥 MAIN ATTRACTION · PRO STUDIO WORKSPACE</p>
+          <h2 style="font-size: clamp(1.8rem, 4vw, 2.8rem);">Music & Video Editor + Synced Pro Partner Room</h2>
+          <p style="font-size: 1rem; color: var(--text-muted);">Enjoy AI-assisted mastering, video synchronization, multi-editing, and real-time room playlists with connected Pro users.</p>
+        </div>
+
+        <!-- Pro Editor Grid -->
+        <div class="pro-editor-grid">
+          <div class="pro-editor-panel" style="border-color: var(--border-glass-glow); box-shadow: 0 15px 40px rgba(0, 240, 255, 0.1);">
+            <div class="editor-header">
+              <p class="badge">PRO EDITOR</p>
+              <h3>Music & Video Editor</h3>
+              <p>Load audio and video sources, then synchronize them with AI-powered tools.</p>
+            </div>
+
+            <div class="editor-controls">
+              <button type="button" class="btn btn-outline" id="multiEditBtn">Switch to multi editing</button>
+              <button type="button" class="btn btn-secondary" id="aiSyncBtn">⚡ AI music-video sync</button>
+              <button type="button" class="btn btn-primary" id="proDownloadBtn">Download final file</button>
+            </div>
+
+            <div class="pro-file-grid">
+              <div class="drop-card">
+                <p class="badge">Audio source</p>
+                <div class="drop-zone pro-drop-zone" id="proAudioDropZone">
+                  <input type="file" id="proAudioFile" accept="audio/*" hidden />
+                  <div class="drop-zone-content">
+                    <h3>Drop audio here</h3>
+                    <p>Select a track for sync and editing.</p>
+                    <button type="button" class="btn btn-primary" id="proAudioBrowseBtn">Choose audio</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="drop-card">
+                <p class="badge">Video source</p>
+                <div class="drop-zone pro-drop-zone" id="proVideoDropZone">
+                  <input type="file" id="proVideoFile" accept="video/*" hidden />
+                  <div class="drop-zone-content">
+                    <h3>Drop video here</h3>
+                    <p>Select a video to align with your track.</p>
+                    <button type="button" class="btn btn-primary" id="proVideoBrowseBtn">Choose video</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pro-preview-panels">
+              <div class="preview-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <p class="badge">Audio preview</p>
+                  <button type="button" class="btn btn-outline" id="proDiscardAudioBtn" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">🗑️ Discard Audio</button>
+                </div>
+                <audio id="proAudioPlayer" controls></audio>
+              </div>
+              <div class="preview-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <p class="badge">Video preview</p>
+                  <button type="button" class="btn btn-outline" id="proDiscardVideoBtn" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">🗑️ Discard Video</button>
+                </div>
+                <video id="proVideoPlayer" controls></video>
+              </div>
+            </div>
+
+            <!-- Interactive Web Audio Spectrum Canvas & Sound FX Rack -->
+            <div class="fx-rack-card" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-glass-glow); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 16px; margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <p class="badge" style="background: rgba(0, 240, 255, 0.15); color: var(--accent-cyan);">🎛️ STUDIO AUDIO FX & VISUALIZER</p>
+                  <h4 style="font-size: 1.1rem; margin-top: 4px;">Real-Time Spectrum Visualizer & 3-Band Equalizer</h4>
+                </div>
+                <div class="fx-preset-pills" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" class="fx-preset-btn active" data-preset="flat">Flat</button>
+                  <button type="button" class="fx-preset-btn" data-preset="bass">Bass Boost</button>
+                  <button type="button" class="fx-preset-btn" data-preset="vocal">Vocal Boost</button>
+                  <button type="button" class="fx-preset-btn" data-preset="lofi">Lo-Fi</button>
+                </div>
+              </div>
+
+              <!-- Canvas Spectrum Visualizer -->
+              <div class="visualizer-container" style="position: relative; width: 100%; height: 110px; background: rgba(5, 11, 20, 0.8); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); overflow: hidden;">
+                <canvas id="audioVisualizerCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                <div style="position: absolute; top: 8px; right: 12px; font-size: 0.7rem; color: var(--accent-cyan); font-weight: 600; letter-spacing: 1px;">60 FPS SPECTRUM ANALYZER</div>
+              </div>
+
+              <!-- 3-Band EQ & Reverb Controls Grid -->
+              <div class="eq-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 14px;">
+                <div class="eq-slider-card" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <span>Low (Bass)</span>
+                    <span id="lowEqVal">0 dB</span>
+                  </div>
+                  <input type="range" id="lowEqSlider" min="-12" max="12" value="0" step="1" style="width: 100%; cursor: pointer;" />
+                </div>
+
+                <div class="eq-slider-card" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <span>Mid (Vocals)</span>
+                    <span id="midEqVal">0 dB</span>
+                  </div>
+                  <input type="range" id="midEqSlider" min="-12" max="12" value="0" step="1" style="width: 100%; cursor: pointer;" />
+                </div>
+
+                <div class="eq-slider-card" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <span>High (Treble)</span>
+                    <span id="highEqVal">0 dB</span>
+                  </div>
+                  <input type="range" id="highEqSlider" min="-12" max="12" value="0" step="1" style="width: 100%; cursor: pointer;" />
+                </div>
+
+                <div class="eq-slider-card" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <span>Space Reverb</span>
+                    <span id="reverbVal">0 %</span>
+                  </div>
+                  <input type="range" id="reverbSlider" min="0" max="100" value="0" step="5" style="width: 100%; cursor: pointer;" />
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-mode-panel">
+              <h3>Editing modes</h3>
+              <div class="mode-grid">
+                <div class="mode-card">
+                  <h4>Multi-edit mode</h4>
+                  <p>Bring together collaborators and edit many tracks in sync.</p>
+                </div>
+                <div class="mode-card">
+                  <h4>Clip edit mode</h4>
+                  <p>Trim, arrange, and tune your audio across devices with precision.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="editor-status" id="editorStatus">Load both audio and video to begin full AI sync.</div>
+          </div>
+
+          <div class="pro-feature-cards">
+            <article class="pro-card" style="border-color: var(--border-glass-glow);">
+              <h3 style="color: var(--accent-cyan);">AI Mastering</h3>
+              <p>Shape your sound with smart mastering presets and instant clarity boosts.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Priority Sessions</h3>
+              <p>Join faster collaboration queues and keep every mix in sync in real time.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Advanced Effects</h3>
+              <p>Use cinematic layers, adaptive EQ, and expanded vocal processing tools.</p>
+            </article>
+            <article class="pro-card">
+              <h3>Music Editing</h3>
+              <p>Edit tracks directly with waveform trimming, automation, and multi-track mix control on every device.</p>
+            </article>
+          </div>
+        </div>
+
+        <!-- Sync Collaboration Section (CONNECTED PRO ROOM PLAYLIST) -->
+        <div class="pro-collab-section" style="border-color: var(--border-glass-glow); box-shadow: 0 15px 40px rgba(0, 240, 255, 0.1);">
+          <div class="section-heading">
+            <p class="badge" style="background: rgba(138, 43, 226, 0.2); border-color: var(--accent-purple); color: var(--text-main);">⭐ PRO SYNCED ROOM</p>
+            <h2>Connect with another Pro User & Listen Together</h2>
+            <p>Connect with a partner, drop tracks into a shared room playlist, and sync playback controls in real-time!</p>
+          </div>
+
+          <div class="sync-top-row">
+            <div class="sync-panel">
+              <div class="sync-panel-header">
+                <p class="badge">Connect Pro Partner</p>
+                <span class="sync-status-badge" id="syncConnectionStatus">Not connected</span>
+              </div>
+              <div class="sync-connect-grid">
+                <input type="email" id="partnerEmailInput" placeholder="Enter Pro partner email" />
+                <button type="button" class="btn btn-secondary" id="connectPartnerBtn">Connect Partner</button>
+              </div>
+              <p class="sync-note" style="font-size: 0.8rem; color: var(--text-muted);">Enter any registered Pro email to establish a shared synced room.</p>
+            </div>
+
+            <div class="sync-panel">
+              <div class="sync-panel-header">
+                <p class="badge">Room Controls</p>
+              </div>
+              <div class="synced-player-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" id="syncPrevBtn">⏮ Prev Track</button>
+                <button type="button" class="btn btn-primary" id="syncPlayPauseBtn">▶ Play Shared Session</button>
+                <button type="button" class="btn btn-secondary" id="syncNextBtn">⏭ Next Track</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drop Songs to Room Playlist Grid -->
+          <div class="sync-user-grid">
+            <div class="sync-card">
+              <p class="badge">Your Track Upload</p>
+              <div class="drop-zone pro-drop-zone" id="collabAudioDropZone">
+                <input type="file" id="collabAudioFile" accept="audio/*" hidden />
+                <div class="drop-zone-content">
+                  <h3>Drop Song into Room Playlist</h3>
+                  <p>Add your track to the shared room queue.</p>
+                  <button type="button" class="btn btn-primary" id="collabAudioBrowseBtn">Choose Song</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="sync-card">
+              <p class="badge">Partner Track Upload</p>
+              <div class="drop-zone pro-drop-zone" id="partnerAudioDropZone">
+                <input type="file" id="partnerAudioFile" accept="audio/*" hidden />
+                <div class="drop-zone-content">
+                  <h3>Drop Partner Song</h3>
+                  <p>Partner uploads track to the shared room queue.</p>
+                  <button type="button" class="btn btn-primary" id="partnerAudioBrowseBtn">Choose Partner Song</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Synced Audio Player & Shared Room Playlist Queue -->
+          <div class="sync-room-status">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <p class="badge">Shared Room Playlist & Synced Audio</p>
+              <span id="syncedStatusBadge" style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">● SYNC READY</span>
+            </div>
+            
+            <h3 id="syncRoomTitle" style="margin-top: 8px;">No partner connected</h3>
+            <p id="syncRoomText">Connect a Pro user to unlock simultaneous room playback and shared track queue.</p>
+
+            <div class="shared-audio-container" style="margin: 16px 0;">
+              <audio id="sharedRoomAudioPlayer" controls style="width: 100%;"></audio>
+            </div>
+
+            <!-- Dynamic Playlist Queue Container -->
+            <div class="room-playlist-box" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-top: 12px;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--accent-cyan);">🎶 Shared Room Playlist Queue</h4>
+              <div id="roomPlaylistQueue" style="display: flex; flex-direction: column; gap: 8px;">
+                <p style="font-size: 0.85rem; color: var(--text-muted);">No songs added to the playlist yet. Drop tracks above!</p>
+              </div>
+            </div>
+          </div>
+          <!-- Chill Out Lounge (Integrated into the same Pro Synced Room section card) -->
+          <div class="chill-section-integrated" style="border-top: 1px solid var(--border-glass); padding-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="section-heading">
+              <p class="badge">Chill out lounge</p>
+              <h3 style="font-size: 1.4rem;">Friends listen together in sync.</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Share a relaxed listening space where music stays aligned across mobile, tablet, and desktop.</p>
+            </div>
+
+            <div class="chill-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <article class="chill-card" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <h4>Shared lounge</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Invite friends to join the room and enjoy synced playback with live presence updates.</p>
+                <div class="friends-list" style="display: flex; gap: 10px; font-size: 0.85rem; color: var(--accent-cyan);">
+                  <span>🎧 Alex</span>
+                  <span>🎹 Maya</span>
+                  <span>🎤 Sam</span>
+                </div>
+              </article>
+              <article class="chill-card" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+                <h4>Session sync</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Music playback and cue markers remain in sync no matter what device each friend uses.</p>
+                <div class="sync-status" style="color: var(--accent-green); font-weight: 600; font-size: 0.85rem;">SYNCED · 3 listeners</div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Grid -->
+      <section class="stats-grid">
+        <article class="stat-card">
+          <h3>No. of stems uploaded</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Stems uploaded weekly</p>
+        </article>
+        <article class="stat-card">
+          <h3>99.8%</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Project sync reliability</p>
+        </article>
+        <article class="stat-card">
+          <h3>3x faster</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Review cycles with snapshots</p>
+        </article>
+      </section>
+
+      <!-- Features Grid -->
+      <section class="features-grid" id="features">
+        <article class="feature-card">
+          <h3>Stem Upload Manager</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Support for WAV, MP3, and AIFF files with waveform previews and instant validation.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Real-Time Editor</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">See every collaborator’s cursor and edit live, with conflict resolution built in.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Version History</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Roll back to named snapshots anytime with a Git-inspired timeline of project states.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Studio Contact</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Reach out for bookings, collaborations, and fast support with a direct contact flow.</p>
+        </article>
+      </section>
+
+      <!-- Workflow Timeline -->
+      <section class="workflow" id="workflow">
+        <div class="section-heading">
+          <p class="badge">How it flows</p>
+          <h2>From upload to payout in four smooth steps.</h2>
+        </div>
+
+        <div class="timeline-grid" style="margin-top: 20px;">
+          <article class="timeline-card active">
+            <h3>01. Upload stems</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Drop in your tracks and let the workspace build waveform previews instantly.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>02. Edit together</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Collaborators shape the mix in real time with synced cursors and updates.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>03. Save snapshots</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Capture named versions and roll back without losing creative momentum.</p>
+          </article>
+          <article class="timeline-card">
+            <h3>04. Connect with us</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Share your idea, book a session, and keep the collaboration moving with direct contact.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="contact-section" id="contact">
+        <div class="contact-card">
+          <div class="contact-copy">
+            <p class="badge">Contact</p>
+            <h2>Let’s build your next beat together.</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+              Reach out for studio sessions, live events, or collaboration bookings.
+            </p>
+            <ul class="contact-list">
+              <li>📧 khanjansarma67@gmail.com</li>
+              <li>📞 +91 6003113393</li>
+              <li>📍 Assam, India</li>
+            </ul>
+          </div>
+
+          <form class="contact-form" id="contactForm">
+            <input type="text" name="name" placeholder="Your name" required />
+            <input type="email" name="email" placeholder="Your email" required />
+            <textarea rows="4" name="message" placeholder="Tell us about your project" required></textarea>
+            <button type="submit" class="btn btn-primary">Send Message</button>
+            <p class="form-status" id="formMessage" aria-live="polite" style="font-size: 0.85rem; color: var(--accent-cyan);"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
