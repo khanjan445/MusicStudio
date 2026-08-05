@@ -537,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (welcomeUserName) welcomeUserName.textContent = user.username || user.name;
     startWelcomeTypewriterAnimation(user.username || user.name);
 
+    updateActiveUsersCount();
     showToast(`Welcome back, ${user.username || user.name}!`);
   }
 
@@ -557,6 +558,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const activeUsersCountEl = document.getElementById('activeUsersCount');
+
+  async function updateActiveUsersCount() {
+    let count = 1;
+    try {
+      const users = await window.ApiService.getUsers();
+      if (Array.isArray(users) && users.length > 0) {
+        count = users.length;
+      }
+    } catch (e) {
+      try {
+        const local = JSON.parse(localStorage.getItem('jaiak_users_db') || '[]');
+        if (local.length > 0) count = local.length;
+      } catch (err) {}
+    }
+    if (activeUsersCountEl) {
+      activeUsersCountEl.textContent = count;
+    }
+    return count;
+  }
+
   signupForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('signupName')?.value.trim();
@@ -569,6 +591,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await window.ApiService.register(name, email, password);
       showMainApp(data.user);
       signupForm.reset();
+      const count = await updateActiveUsersCount();
+      broadcastRoomEvent('USER_REGISTERED', { activeUsersCount: count, newUserName: data.user.username || data.user.name });
       showToast('Account created successfully!');
     } catch (err) {
       setAuthMessage(err.message || 'Registration failed.', true);
@@ -876,22 +900,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!requireAuth()) return;
     if (proAudioPlayer) {
       proAudioPlayer.pause();
+      proAudioPlayer.src = '';
       proAudioPlayer.removeAttribute('src');
+      proAudioPlayer.load();
     }
     if (proAudioFileInput) proAudioFileInput.value = '';
     setEditorStatus('Pro Audio track discarded.');
-    showToast('Pro Audio track discarded.');
+    showToast('Pro Audio track discarded & player reset.');
   });
 
   proDiscardVideoBtn?.addEventListener('click', () => {
     if (!requireAuth()) return;
     if (proVideoPlayer) {
       proVideoPlayer.pause();
+      proVideoPlayer.src = '';
       proVideoPlayer.removeAttribute('src');
+      proVideoPlayer.load();
     }
     if (proVideoFileInput) proVideoFileInput.value = '';
     setEditorStatus('Pro Video track discarded.');
-    showToast('Pro Video track discarded.');
+    showToast('Pro Video track discarded & player reset.');
   });
 
   aiSyncBtn?.addEventListener('click', () => {
@@ -957,28 +985,97 @@ document.addEventListener('DOMContentLoaded', () => {
         background: ${i === currentTrackIndex ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255,255,255,0.03)'};
         border: 1px solid ${i === currentTrackIndex ? 'var(--accent-cyan)' : 'var(--border-glass)'};
         border-radius: var(--radius-md);
-        cursor: pointer;
-        transition: var(--transition-fast);
+        gap: 10px;
+        flex-wrap: wrap;
       ">
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 180px;">
           <span style="font-weight: 700; color: ${i === currentTrackIndex ? 'var(--accent-cyan)' : 'var(--text-muted)'};">${i === currentTrackIndex ? '▶' : i + 1}</span>
           <div>
-            <h5 style="font-size: 0.9rem; color: var(--text-main);">${track.name}</h5>
+            <h5 style="font-size: 0.9rem; color: var(--text-main); margin: 0;">${track.name}</h5>
             <span style="font-size: 0.75rem; color: var(--text-muted);">Added by ${track.uploaderName} (${track.uploaderType})</span>
           </div>
         </div>
-        <button type="button" class="btn btn-outline track-select-btn" data-index="${i}" style="padding: 4px 10px; font-size: 0.75rem; min-height: 28px;">
-          ${i === currentTrackIndex ? 'Playing' : 'Play Now'}
-        </button>
+
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary track-play-btn" data-index="${i}" style="padding: 4px 10px; font-size: 0.75rem; min-height: 28px;">
+            ${i === currentTrackIndex ? '⏸ Playing' : '▶ Play'}
+          </button>
+          <button type="button" class="btn btn-outline track-up-btn" data-index="${i}" ${i === 0 ? 'disabled style="opacity:0.3;"' : ''} style="padding: 4px 8px; font-size: 0.75rem; min-height: 28px;" title="Move Up in Queue">⬆</button>
+          <button type="button" class="btn btn-outline track-down-btn" data-index="${i}" ${i === roomPlaylist.length - 1 ? 'disabled style="opacity:0.3;"' : ''} style="padding: 4px 8px; font-size: 0.75rem; min-height: 28px;" title="Move Down in Queue">⬇</button>
+          <button type="button" class="btn btn-outline track-delete-btn" data-index="${i}" style="padding: 4px 10px; font-size: 0.75rem; min-height: 28px; color: #ff2e93; border-color: rgba(255, 46, 147, 0.6); background: rgba(255, 46, 147, 0.1);" title="Delete Track from Queue">🗑️ Delete</button>
+        </div>
       </div>
     `).join('');
 
-    // Attach click handlers to playlist items
-    document.querySelectorAll('.playlist-item').forEach(item => {
-      item.addEventListener('click', () => {
+    // Attach Play Handlers
+    document.querySelectorAll('.track-play-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (!requireProSubscription()) return;
-        const index = parseInt(item.dataset.index, 10);
+        const index = parseInt(btn.dataset.index, 10);
         playTrackAtIndex(index);
+      });
+    });
+
+    // Attach Move Up Handlers
+    document.querySelectorAll('.track-up-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!requireProSubscription()) return;
+        const index = parseInt(btn.dataset.index, 10);
+        if (index > 0) {
+          const temp = roomPlaylist[index];
+          roomPlaylist[index] = roomPlaylist[index - 1];
+          roomPlaylist[index - 1] = temp;
+          if (currentTrackIndex === index) currentTrackIndex = index - 1;
+          else if (currentTrackIndex === index - 1) currentTrackIndex = index;
+          renderRoomPlaylist();
+          showToast(`Moved "${temp.name}" up in queue!`);
+        }
+      });
+    });
+
+    // Attach Move Down Handlers
+    document.querySelectorAll('.track-down-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!requireProSubscription()) return;
+        const index = parseInt(btn.dataset.index, 10);
+        if (index < roomPlaylist.length - 1) {
+          const temp = roomPlaylist[index];
+          roomPlaylist[index] = roomPlaylist[index + 1];
+          roomPlaylist[index + 1] = temp;
+          if (currentTrackIndex === index) currentTrackIndex = index + 1;
+          else if (currentTrackIndex === index + 1) currentTrackIndex = index;
+          renderRoomPlaylist();
+          showToast(`Moved "${temp.name}" down in queue!`);
+        }
+      });
+    });
+
+    // Attach Delete Track Handlers
+    document.querySelectorAll('.track-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!requireProSubscription()) return;
+        const index = parseInt(btn.dataset.index, 10);
+        const removed = roomPlaylist.splice(index, 1)[0];
+
+        if (currentTrackIndex === index) {
+          if (sharedRoomAudioPlayer) {
+            sharedRoomAudioPlayer.pause();
+            sharedRoomAudioPlayer.src = '';
+            sharedRoomAudioPlayer.removeAttribute('src');
+            sharedRoomAudioPlayer.load();
+          }
+          currentTrackIndex = -1;
+        } else if (currentTrackIndex > index) {
+          currentTrackIndex--;
+        }
+
+        renderRoomPlaylist();
+        broadcastRoomEvent('UPDATE_PLAYLIST', { roomPlaylist, currentTrackIndex });
+        showToast(`Deleted "${removed ? removed.name : 'track'}" from queue.`);
       });
     });
   }
@@ -1001,7 +1098,140 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       renderRoomPlaylist();
     }
+    broadcastRoomEvent('UPDATE_PLAYLIST', { roomPlaylist, currentTrackIndex });
   }
+
+  // Synced Room Track Discard Buttons
+  const discardCollabAudioBtn = document.getElementById('discardCollabAudioBtn');
+  const discardPartnerAudioBtn = document.getElementById('discardPartnerAudioBtn');
+  const discardSharedPlayerBtn = document.getElementById('discardSharedPlayerBtn');
+  const clearRoomPlaylistBtn = document.getElementById('clearRoomPlaylistBtn');
+
+  discardCollabAudioBtn?.addEventListener('click', () => {
+    if (!requireProSubscription()) return;
+    if (collabAudioFileInput) collabAudioFileInput.value = '';
+    showToast('Your track upload selection cleared.');
+  });
+
+  discardPartnerAudioBtn?.addEventListener('click', () => {
+    if (!requireProSubscription()) return;
+    if (partnerAudioFileInput) partnerAudioFileInput.value = '';
+    showToast('Partner track upload selection cleared.');
+  });
+
+  discardSharedPlayerBtn?.addEventListener('click', () => {
+    if (!requireProSubscription()) return;
+    if (sharedRoomAudioPlayer) {
+      sharedRoomAudioPlayer.pause();
+      sharedRoomAudioPlayer.src = '';
+      sharedRoomAudioPlayer.removeAttribute('src');
+      sharedRoomAudioPlayer.load();
+    }
+    if (syncedStatusBadge) syncedStatusBadge.textContent = '● SYNC READY';
+    showToast('Shared Room Audio Player reset.');
+  });
+
+  clearRoomPlaylistBtn?.addEventListener('click', () => {
+    if (!requireProSubscription()) return;
+    if (roomPlaylist.length === 0) return showToast('Playlist is already empty.', true);
+    
+    roomPlaylist = [];
+    currentTrackIndex = -1;
+    if (sharedRoomAudioPlayer) {
+      sharedRoomAudioPlayer.pause();
+      sharedRoomAudioPlayer.src = '';
+      sharedRoomAudioPlayer.removeAttribute('src');
+      sharedRoomAudioPlayer.load();
+    }
+    renderRoomPlaylist();
+    broadcastRoomEvent('UPDATE_PLAYLIST', { roomPlaylist: [], currentTrackIndex: -1 });
+    showToast('Entire Shared Room Playlist cleared!');
+  });
+
+  // File Input Reset Helper (Allows re-selecting & re-uploading discarded songs)
+  [audioFileInput, proAudioFileInput, proVideoFileInput, collabAudioFileInput, partnerAudioFileInput].forEach(input => {
+    input?.addEventListener('click', (e) => {
+      e.target.value = '';
+    });
+  });
+
+  // Real-Time Cross-Tab / Cross-Account Broadcast Channel & LocalStorage Sync
+  let isPartnerConnected = false;
+  let connectedPartnerEmail = '';
+  let roomChannel = null;
+
+  if ('BroadcastChannel' in window) {
+    try {
+      roomChannel = new BroadcastChannel('jaiak_pro_room_channel');
+    } catch (e) {
+      console.warn('BroadcastChannel error:', e);
+    }
+  }
+
+  function broadcastRoomEvent(type, payload = {}) {
+    const message = { 
+      type, 
+      senderEmail: currentUser ? currentUser.email : '', 
+      targetPartner: connectedPartnerEmail,
+      ...payload 
+    };
+    if (roomChannel) {
+      try { roomChannel.postMessage(message); } catch (e) {}
+    }
+    localStorage.setItem('jaiak_room_broadcast_event', JSON.stringify({ ...message, timestamp: Date.now() }));
+  }
+
+  function handleRoomBroadcastMessage(data) {
+    if (!data || !currentUser) return;
+    const myEmail = (currentUser.email || '').toLowerCase();
+    const senderEmail = (data.senderEmail || '').toLowerCase();
+    const targetEmail = (data.targetEmail || data.targetPartner || '').toLowerCase();
+
+    if (data.type === 'CONNECT_PARTNER') {
+      if (myEmail === targetEmail || (connectedPartnerEmail && connectedPartnerEmail.toLowerCase() === senderEmail)) {
+        isPartnerConnected = true;
+        connectedPartnerEmail = senderEmail;
+        if (syncConnectionStatus) syncConnectionStatus.textContent = 'Connected ✓';
+        if (syncRoomTitle) syncRoomTitle.textContent = `Synced Room with ${senderEmail}`;
+        if (syncRoomText) syncRoomText.textContent = `Connected with ${senderEmail}! Both Pro users can now drop songs, control playback, and listen simultaneously.`;
+        if (syncedStatusBadge) syncedStatusBadge.textContent = '● PRO ROOM LIVE & SYNCED';
+        showToast(`Pro Room Live Synced with ${senderEmail}!`);
+      }
+    } else if (data.type === 'UPDATE_PLAYLIST') {
+      if (isPartnerConnected && (myEmail === targetEmail || connectedPartnerEmail.toLowerCase() === senderEmail)) {
+        roomPlaylist = data.roomPlaylist || [];
+        currentTrackIndex = data.currentTrackIndex;
+        renderRoomPlaylist();
+      }
+    } else if (data.type === 'PLAY_TRACK') {
+      if (isPartnerConnected && (myEmail === targetEmail || connectedPartnerEmail.toLowerCase() === senderEmail)) {
+        currentTrackIndex = data.trackIndex;
+        renderRoomPlaylist();
+      }
+    } else if (data.type === 'PAUSE_SHARED') {
+      if (isPartnerConnected && sharedRoomAudioPlayer) {
+        sharedRoomAudioPlayer.pause();
+        if (syncPlayPauseBtn) syncPlayPauseBtn.textContent = '▶ Play Shared Session';
+      }
+    } else if (data.type === 'USER_REGISTERED') {
+      updateActiveUsersCount();
+      if (data.newUserName) {
+        showToast(`🎉 New user registered: ${data.newUserName}! Active users count updated.`);
+      }
+    }
+  }
+
+  if (roomChannel) {
+    roomChannel.onmessage = (event) => handleRoomBroadcastMessage(event.data);
+  }
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'jaiak_room_broadcast_event' && e.newValue) {
+      try {
+        handleRoomBroadcastMessage(JSON.parse(e.newValue));
+      } catch (err) {}
+    }
+  });
 
   connectPartnerBtn?.addEventListener('click', () => {
     if (!requireProSubscription()) return;
@@ -1016,6 +1246,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncRoomText) syncRoomText.textContent = `Connected with ${email}! Both Pro users can now drop songs, control playback, and listen simultaneously.`;
     if (syncedStatusBadge) syncedStatusBadge.textContent = '● PRO ROOM LIVE & SYNCED';
 
+    // Broadcast connection event to partner account tab
+    broadcastRoomEvent('CONNECT_PARTNER', { targetEmail: email });
+
     setEditorStatus(`Partner connected: ${email}. Add songs to the shared playlist below!`);
     showToast(`Pro Room Connected with ${email}!`);
   });
@@ -1029,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (file) {
       const uploader = currentUser ? (currentUser.username || currentUser.name) : 'You';
       addSongToRoomPlaylist(file, uploader, 'You');
+      e.target.value = ''; // Reset value after upload so same file can be re-uploaded if discarded
     }
   });
 
@@ -1038,6 +1272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (file) {
       const uploader = connectedPartnerEmail || 'Partner';
       addSongToRoomPlaylist(file, uploader, 'Partner');
+      e.target.value = ''; // Reset value after upload
     }
   });
 

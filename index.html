@@ -244,7 +244,7 @@
               </div>
               <div>
                 <p style="font-size: 0.8rem; color: var(--text-muted);">Active Users</p>
-                <h3>5</h3>
+                <h3 id="activeUsersCount">1</h3>
               </div>
             </div>
 
@@ -487,7 +487,10 @@
           <!-- Drop Songs to Room Playlist Grid -->
           <div class="sync-user-grid">
             <div class="sync-card">
-              <p class="badge">Your Track Upload</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p class="badge">Your Track Upload</p>
+                <button type="button" class="btn btn-outline" id="discardCollabAudioBtn" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">🗑️ Discard Track</button>
+              </div>
               <div class="drop-zone pro-drop-zone" id="collabAudioDropZone">
                 <input type="file" id="collabAudioFile" accept="audio/*" hidden />
                 <div class="drop-zone-content">
@@ -499,7 +502,10 @@
             </div>
 
             <div class="sync-card">
-              <p class="badge">Partner Track Upload</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p class="badge">Partner Track Upload</p>
+                <button type="button" class="btn btn-outline" id="discardPartnerAudioBtn" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">🗑️ Discard Track</button>
+              </div>
               <div class="drop-zone pro-drop-zone" id="partnerAudioDropZone">
                 <input type="file" id="partnerAudioFile" accept="audio/*" hidden />
                 <div class="drop-zone-content">
@@ -515,7 +521,10 @@
           <div class="sync-room-status">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <p class="badge">Shared Room Playlist & Synced Audio</p>
-              <span id="syncedStatusBadge" style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">● SYNC READY</span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span id="syncedStatusBadge" style="color: var(--accent-green); font-size: 0.85rem; font-weight: 600;">● SYNC READY</span>
+                <button type="button" class="btn btn-outline" id="discardSharedPlayerBtn" style="padding: 2px 8px; font-size: 0.75rem; min-height: 26px;">🗑️ Discard Player</button>
+              </div>
             </div>
             
             <h3 id="syncRoomTitle" style="margin-top: 8px;">No partner connected</h3>
@@ -527,7 +536,10 @@
 
             <!-- Dynamic Playlist Queue Container -->
             <div class="room-playlist-box" style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; margin-top: 12px;">
-              <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--accent-cyan);">🎶 Shared Room Playlist Queue</h4>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <h4 style="font-size: 0.95rem; color: var(--accent-cyan);">🎶 Shared Room Playlist Queue</h4>
+                <button type="button" class="btn btn-outline" id="clearRoomPlaylistBtn" style="padding: 2px 10px; font-size: 0.75rem; min-height: 26px; color: var(--accent-magenta); border-color: rgba(255, 46, 147, 0.4);">🗑️ Clear Playlist</button>
+              </div>
               <div id="roomPlaylistQueue" style="display: flex; flex-direction: column; gap: 8px;">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">No songs added to the playlist yet. Drop tracks above!</p>
               </div>
@@ -652,7 +664,7 @@
     </main>
 
     <!-- Scripts -->
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
   </body>
 </html>
