@@ -1,11 +1,16 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
+const User = require('../models/User');
 const { readUsersFromCsv, writeUsersToCsv, csvPath } = require('../utils/csvHandler');
 
 const router = express.Router();
 
 // Helper to get User model safely if database is connected
 function getUserModel(req) {
+  if (mongoose.connection.readyState === 1) {
+    return User;
+  }
   return req.app.get('isDbConnected') ? req.app.get('UserModel') : null;
 }
 
