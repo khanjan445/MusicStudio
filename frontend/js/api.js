@@ -1,11 +1,14 @@
-// Jaiak Studio API Client Layer (Hybrid: Real Server + GitHub Pages Client Fallback)
+// Jaiak Studio API Client Layer (Hybrid: Render Server + GitHub Pages Client Fallback)
 
-const isGitHubPages = window.location.hostname.includes('github.io');
-const API_BASE_URL = window.location.origin.includes('5000') || window.location.origin.includes('3000')
-  ? '' 
-  : 'http://localhost:3000';
+const isLocalhost =
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1';
 
-// Client-side LocalStorage DB for GitHub Pages Fallback
+const API_BASE_URL = isLocalhost
+  ? 'http://localhost:3000'
+  : 'https://musicstudio-v7xf.onrender.com';
+
+// Client-side LocalStorage DB for Offline/Fallback Mode
 function getLocalUsersDB() {
   try {
     return JSON.parse(localStorage.getItem('jaiak_users_db') || '[]');
@@ -20,10 +23,6 @@ function saveLocalUsersDB(users) {
 
 class ApiService {
   static async request(endpoint, options = {}) {
-    if (isGitHubPages) {
-      throw new Error('GITHUB_PAGES_FALLBACK');
-    }
-
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -53,13 +52,13 @@ class ApiService {
         body: JSON.stringify({ email, password }),
       });
     } catch (err) {
-      // Fallback for GitHub Pages or offline local server
+      // Fallback for offline mode or network timeouts
       const users = getLocalUsersDB();
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (user) {
-        return { message: 'Login successful (GitHub Pages Mode)', user };
+        return { message: 'Login successful (Offline Fallback)', user };
       }
-      // Create new user on the fly if logging in for first time on GitHub Pages
+      // Create new user on the fly if logging in for first time offline
       const newUser = {
         name: email.split('@')[0],
         username: email.split('@')[0],
@@ -70,7 +69,7 @@ class ApiService {
       };
       users.push(newUser);
       saveLocalUsersDB(users);
-      return { message: 'Login successful (GitHub Pages Mode)', user: newUser };
+      return { message: 'Login successful (Offline Fallback)', user: newUser };
     }
   }
 
@@ -96,7 +95,7 @@ class ApiService {
       };
       users.push(newUser);
       saveLocalUsersDB(users);
-      return { message: 'User registered (GitHub Pages Mode)', user: newUser };
+      return { message: 'User registered (Offline Fallback)', user: newUser };
     }
   }
 
@@ -108,7 +107,7 @@ class ApiService {
       });
     } catch (err) {
       const demoOtp = '123456';
-      return { message: 'OTP sent (GitHub Pages Mode)', otp: demoOtp };
+      return { message: 'OTP sent (Offline Fallback)', otp: demoOtp };
     }
   }
 
@@ -119,7 +118,7 @@ class ApiService {
         body: JSON.stringify({ email, otp, newPassword }),
       });
     } catch (err) {
-      return { message: 'Password reset successful (GitHub Pages Mode)' };
+      return { message: 'Password reset successful (Offline Fallback)' };
     }
   }
 
@@ -155,7 +154,7 @@ class ApiService {
         users.push(updatedUser);
       }
       saveLocalUsersDB(users);
-      return { message: 'Profile updated (GitHub Pages Mode)', user: updatedUser };
+      return { message: 'Profile updated (Offline Fallback)', user: updatedUser };
     }
   }
 
