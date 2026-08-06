@@ -44,7 +44,7 @@ app.use('/', authRoutes);
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 
-app.get('*', (req, res, next) => {
+app.get('/*splat', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path === '/login' || req.path === '/register') {
     return next();
   }
