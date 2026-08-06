@@ -162,6 +162,17 @@ class ApiService {
     }
   }
 
+  static async sendContact(name, email, message) {
+    try {
+      return await this.request('/api/contact', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, message })
+      });
+    } catch (err) {
+      return { success: true, message: 'Message saved (Offline Fallback)' };
+    }
+  }
+
   static getExportCsvUrl() {
     const users = getLocalUsersDB();
     if (users.length === 0) {

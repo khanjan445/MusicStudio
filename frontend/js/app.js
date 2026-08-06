@@ -1315,12 +1315,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Contact Form
-  contactForm?.addEventListener('submit', (e) => {
+  contactForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     if (!requireAuth()) return;
-    if (formMessage) formMessage.textContent = 'Message sent to Jaiak Studio!';
-    showToast('Message sent to studio!');
-    contactForm.reset();
+
+    const name = document.getElementById('contactName')?.value || '';
+    const email = document.getElementById('contactEmail')?.value || '';
+    const message = document.getElementById('contactMessage')?.value || '';
+
+    try {
+      await window.ApiService.sendContact(name, email, message);
+
+      if (formMessage) formMessage.textContent = 'Message sent successfully!';
+      showToast('Message saved to MongoDB!');
+      contactForm.reset();
+    } catch (err) {
+      if (formMessage) formMessage.textContent = 'Failed to send message.';
+      showToast('Error sending message.', true);
+    }
   });
 
   // Session Progress Simulation

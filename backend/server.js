@@ -6,6 +6,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./routes/authRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const User = require('./models/User');
 
 const app = express();
@@ -41,6 +42,7 @@ mongoose.connect(mongoUri)
 
 // Attach API Routes
 app.use('/', authRoutes);
+app.use('/api', contactRoutes);
 
 // Optional: Serve frontend static files if running monolithic bundle
 const frontendPath = path.join(__dirname, '..', 'frontend');
