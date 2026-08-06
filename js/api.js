@@ -124,8 +124,12 @@ class ApiService {
 
   static async getUsers() {
     try {
-      return await this.request('/api/users');
+      const data = await this.request('/api/users');
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.users)) return data.users;
+      return getLocalUsersDB();
     } catch (err) {
+      console.warn('API getUsers fallback:', err.message);
       return getLocalUsersDB();
     }
   }
