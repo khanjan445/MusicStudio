@@ -47,15 +47,34 @@ class ApiService {
 
   static async login(email, password) {
     try {
-      return await this.request('/login', {
+      const res = await this.request('/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+      if (res && res.user) {
+        const cleanEmail = res.user.email.toLowerCase();
+        const perEmailSub = localStorage.getItem(`jaiakStudioProSubscribed_${cleanEmail}`) === 'true';
+        if (perEmailSub) {
+          res.user.isProSubscribed = true;
+        }
+        const users = getLocalUsersDB();
+        const idx = users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+        if (idx !== -1) {
+          users[idx] = { ...users[idx], ...res.user };
+        } else {
+          users.push(res.user);
+        }
+        saveLocalUsersDB(users);
+      }
+      return res;
     } catch (err) {
       // Fallback for offline mode or network timeouts
       const users = getLocalUsersDB();
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const user = users.find(u => u.email.toLowerCase() === cleanEmail);
       if (user) {
+        const perEmailSub = localStorage.getItem(`jaiakStudioProSubscribed_${cleanEmail}`) === 'true';
+        if (perEmailSub) user.isProSubscribed = true;
         return { message: 'Login successful (Offline Fallback)', user };
       }
       // Create new user on the fly if logging in for first time offline
@@ -65,7 +84,7 @@ class ApiService {
         email: email,
         phone: '',
         avatar: '👤',
-        isProSubscribed: false
+        isProSubscribed: localStorage.getItem(`jaiakStudioProSubscribed_${cleanEmail}`) === 'true'
       };
       users.push(newUser);
       saveLocalUsersDB(users);
@@ -135,21 +154,44 @@ class ApiService {
   }
 
   static async updateProfile(oldEmail, username, email, phone, avatar, isProSubscribed) {
+    const cleanOldEmail = (oldEmail || '').toLowerCase();
+    const cleanNewEmail = (email || oldEmail || '').toLowerCase();
+    const boolPro = Boolean(isProSubscribed);
+
+    if (cleanOldEmail) localStorage.setItem(`jaiakStudioProSubscribed_${cleanOldEmail}`, boolPro ? 'true' : 'false');
+    if (cleanNewEmail) localStorage.setItem(`jaiakStudioProSubscribed_${cleanNewEmail}`, boolPro ? 'true' : 'false');
+
     try {
-      return await this.request('/api/users/profile', {
+      const res = await this.request('/api/users/profile', {
         method: 'PUT',
-        body: JSON.stringify({ oldEmail, username, email, phone, avatar, isProSubscribed }),
+        body: JSON.stringify({ oldEmail, username, email, phone, avatar, isProSubscribed: boolPro }),
       });
+
+      const users = getLocalUsersDB();
+      const userIndex = users.findIndex(u => u.email.toLowerCase() === cleanOldEmail);
+      if (userIndex !== -1) {
+        users[userIndex] = {
+          ...users[userIndex],
+          name: username,
+          username: username,
+          email: cleanNewEmail,
+          phone: phone || '',
+          avatar: avatar || '👤',
+          isProSubscribed: boolPro
+        };
+        saveLocalUsersDB(users);
+      }
+      return res;
     } catch (err) {
       const users = getLocalUsersDB();
-      const userIndex = users.findIndex(u => u.email.toLowerCase() === (oldEmail || '').toLowerCase());
+      const userIndex = users.findIndex(u => u.email.toLowerCase() === cleanOldEmail);
       const updatedUser = {
         name: username,
         username: username,
-        email: email,
+        email: cleanNewEmail,
         phone: phone || '',
         avatar: avatar || '👤',
-        isProSubscribed: Boolean(isProSubscribed)
+        isProSubscribed: boolPro
       };
 
       if (userIndex !== -1) {

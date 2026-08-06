@@ -161,12 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadSubscriptionState() {
-    if (currentUser && currentUser.isProSubscribed !== undefined) {
-      return !!currentUser.isProSubscribed;
-    }
-    const userEmail = currentUser ? currentUser.email : '';
-    const key = userEmail ? `${PRO_SUBSCRIPTION_KEY}_${userEmail}` : PRO_SUBSCRIPTION_KEY;
-    return localStorage.getItem(key) === 'true' || localStorage.getItem(PRO_SUBSCRIPTION_KEY) === 'true';
+    if (!currentUser) return localStorage.getItem(PRO_SUBSCRIPTION_KEY) === 'true';
+    const userEmail = (currentUser.email || '').toLowerCase();
+    const perEmailKey = userEmail ? `${PRO_SUBSCRIPTION_KEY}_${userEmail}` : PRO_SUBSCRIPTION_KEY;
+    const isPerEmailPro = localStorage.getItem(perEmailKey) === 'true';
+    const isGlobalPro = localStorage.getItem(PRO_SUBSCRIPTION_KEY) === 'true';
+    return Boolean(currentUser.isProSubscribed) || isPerEmailPro || isGlobalPro;
   }
 
   function setSubscriptionState(subscribed) {
